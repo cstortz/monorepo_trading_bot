@@ -21,3 +21,4 @@ echo "🔍 Running tests for hello-world service..."
 python -m pytest services/hello-world/tests/ -v
 
 echo "✅ All tests passed!"
+

@@ -46,3 +46,4 @@ def test_logging_test():
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Logging test completed - check the logs!"
+

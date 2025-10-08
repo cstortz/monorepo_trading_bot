@@ -37,3 +37,4 @@ echo "  python -m pytest services/hello-world/tests/"
 echo ""
 echo "To deploy to Kubernetes:"
 echo "  kubectl apply -f k8s/"
+
