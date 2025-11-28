@@ -304,6 +304,28 @@ async def get_market_data(
         logger.error(f"Failed to get market data for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve market data: {str(e)}")
 
+@app.get("/market-data/{symbol}/timeframes")
+async def get_symbol_timeframes(symbol: str):
+    """Get distinct timeframes available for a symbol."""
+    logger.info(f"Getting available timeframes for {symbol}")
+    
+    try:
+        with DatabaseClient() as client:
+            trading_db = TradingBotDatabase(client)
+            
+            # Get distinct timeframes
+            timeframes = trading_db.get_distinct_timeframes(symbol)
+            
+            return {
+                "symbol": symbol,
+                "timeframes": timeframes,
+                "count": len(timeframes)
+            }
+            
+    except Exception as e:
+        logger.error(f"Failed to get timeframes for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve timeframes: {str(e)}")
+
 @app.post("/market-data")
 async def insert_market_data(data: MarketDataInsert):
     """Insert market data for a symbol."""

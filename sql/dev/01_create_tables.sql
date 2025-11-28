@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS symbols (
 CREATE TABLE IF NOT EXISTS market_data (
     id BIGSERIAL PRIMARY KEY,
     symbol_id INTEGER NOT NULL REFERENCES symbols(id) ON DELETE CASCADE,
-    timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+    t_stamp TIMESTAMP WITH TIME ZONE NOT NULL,
     open DECIMAL(20,8) NOT NULL,
     high DECIMAL(20,8) NOT NULL,
     low DECIMAL(20,8) NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS market_data (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
     -- Composite unique constraint
-    UNIQUE(symbol_id, timestamp, time_frame, data_source)
+    UNIQUE(symbol_id, t_stamp, time_frame, data_source)
 );
 
 -- Real-time prices table - for current market prices
@@ -152,9 +152,9 @@ CREATE TABLE IF NOT EXISTS data_sources (
 -- =============================================
 
 -- Market data indexes
-CREATE INDEX IF NOT EXISTS idx_market_data_symbol_timestamp ON market_data(symbol_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_market_data_symbol_timestamp ON market_data(symbol_id, t_stamp DESC);
 CREATE INDEX IF NOT EXISTS idx_market_data_timeframe ON market_data(time_frame);
-CREATE INDEX IF NOT EXISTS idx_market_data_timestamp ON market_data(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_market_data_timestamp ON market_data(t_stamp DESC);
 
 -- Real-time prices indexes
 CREATE INDEX IF NOT EXISTS idx_real_time_prices_symbol ON real_time_prices(symbol_id);

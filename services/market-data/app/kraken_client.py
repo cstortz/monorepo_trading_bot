@@ -217,8 +217,9 @@ class KrakenClient:
         close = ticker_data.get("c", [0, 0])
         volume = ticker_data.get("v", [0, 0])
         high_low = ticker_data.get("h", [0, 0])
-        open_price = ticker_data.get("o", 0)
+        open_price_raw = ticker_data.get("o", 0)
         
+        # Convert all values to float to ensure type safety
         current_price = float(close[0]) if close else 0.0
         ask_price = float(ask[0]) if ask else None
         bid_price = float(bid[0]) if bid else None
@@ -228,8 +229,14 @@ class KrakenClient:
         high_24h = float(high_low[0]) if high_low else current_price
         low_24h = float(high_low[1]) if len(high_low) > 1 else current_price
         
-        change_24h = current_price - open_price if open_price else None
-        change_percent_24h = ((current_price - open_price) / open_price * 100) if open_price and open_price > 0 else None
+        # Convert open_price to float (it might be a string from the API)
+        try:
+            open_price = float(open_price_raw) if open_price_raw else None
+        except (ValueError, TypeError):
+            open_price = None
+        
+        change_24h = (current_price - open_price) if open_price is not None else None
+        change_percent_24h = ((current_price - open_price) / open_price * 100) if open_price is not None and open_price > 0 else None
         
         return {
             "price": current_price,

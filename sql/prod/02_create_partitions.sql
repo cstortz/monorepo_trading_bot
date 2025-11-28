@@ -16,11 +16,11 @@ BEGIN
         partition_name, table_name, start_date, end_date);
     
     -- Create indexes on the partition
-    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (symbol_id, timestamp DESC)',
+    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (symbol_id, t_stamp DESC)',
         partition_name || '_symbol_timestamp_idx', partition_name);
-    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (timestamp DESC)',
+    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (t_stamp DESC)',
         partition_name || '_timestamp_idx', partition_name);
-    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (time_frame, timestamp DESC)',
+    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (time_frame, t_stamp DESC)',
         partition_name || '_timeframe_timestamp_idx', partition_name);
 END;
 $$ LANGUAGE plpgsql;

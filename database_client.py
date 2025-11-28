@@ -12,6 +12,16 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 
+class DateTimeJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime objects."""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            # Return datetime object as-is for httpx to handle
+            # httpx will serialize it properly
+            return obj
+        return super().default(obj)
+
+
 class DatabaseClient:
     """Client for interacting with the database web service."""
     
@@ -57,87 +67,219 @@ class DatabaseClient:
     
     def execute_prepared_sql(self, sql: str, parameters: Optional[Dict] = None, operation_type: str = "read") -> Dict[str, Any]:
         """Execute a prepared SQL statement."""
+        url = f"{self.base_url}/crud/prepared/execute"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {},
                 "operation_type": operation_type
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/execute", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared SQL - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"success": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to execute prepared SQL", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared SQL",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"success": False, "error": str(e)}
     
     def execute_prepared_select(self, sql: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute a prepared SELECT statement."""
+        url = f"{self.base_url}/crud/prepared/select"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {}
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/select", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared SELECT - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"success": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to execute prepared SELECT", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared SELECT",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"success": False, "error": str(e)}
     
     def execute_prepared_insert(self, sql: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute a prepared INSERT statement."""
+        url = f"{self.base_url}/crud/prepared/insert"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {}
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/insert", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared INSERT - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"success": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to execute prepared INSERT", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared INSERT",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"success": False, "error": str(e)}
     
     def execute_prepared_update(self, sql: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute a prepared UPDATE statement."""
+        url = f"{self.base_url}/crud/prepared/update"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {}
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/update", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared UPDATE - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"success": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to execute prepared UPDATE", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared UPDATE",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"success": False, "error": str(e)}
     
     def execute_prepared_delete(self, sql: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute a prepared DELETE statement."""
+        url = f"{self.base_url}/crud/prepared/delete"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {}
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/delete", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared DELETE - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"success": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to execute prepared DELETE", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to execute prepared DELETE",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"success": False, "error": str(e)}
     
     def validate_sql(self, sql: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
         """Validate a SQL statement without executing it."""
+        url = f"{self.base_url}/crud/prepared/validate"
         try:
             payload = {
                 "sql": sql,
                 "parameters": parameters or {}
             }
-            response = self.client.post(f"{self.base_url}/crud/prepared/validate", json=payload)
+            response = self.client.post(url, json=payload)
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to validate SQL - HTTP error",
+                error=str(e),
+                url=url,
+                status_code=e.response.status_code,
+                response_text=e.response.text if e.response else None,
+                payload_json=payload_json,
+                sql=sql
+            )
+            return {"valid": False, "error": str(e)}
         except Exception as e:
-            logger.error("Failed to validate SQL", error=str(e), sql=sql)
+            # Log the JSON payload that was sent
+            payload_json = json.dumps(payload, indent=2, default=str)
+            logger.error(
+                "Failed to validate SQL",
+                error=str(e),
+                url=url,
+                payload_json=payload_json,
+                sql=sql
+            )
             return {"valid": False, "error": str(e)}
     
     def get_prepared_statements(self) -> Dict[str, Any]:
@@ -271,11 +413,11 @@ class TradingBotDatabase:
     def get_market_data(self, symbol: str, timeframe: str = "1d", limit: int = 100) -> List[Dict[str, Any]]:
         """Get market data for a symbol."""
         sql = """
-        SELECT md.*, s.symbol, s.name 
+        SELECT md.*, md.t_stamp AS timestamp, s.symbol, s.name 
         FROM market_data md
         JOIN symbols s ON md.symbol_id = s.id
         WHERE s.symbol = $1 AND md.time_frame = $2
-        ORDER BY md.timestamp DESC
+        ORDER BY md.t_stamp DESC
         LIMIT $3
         """
         result = self.client.execute_prepared_select(sql, {
@@ -285,17 +427,41 @@ class TradingBotDatabase:
         })
         return result.get("data", []) if result.get("success") else []
     
+    def get_distinct_timeframes(self, symbol: str) -> List[str]:
+        """Get distinct timeframes available for a symbol."""
+        sql = """
+        SELECT DISTINCT md.time_frame
+        FROM market_data md
+        JOIN symbols s ON md.symbol_id = s.id
+        WHERE s.symbol = $1
+        ORDER BY md.time_frame
+        """
+        result = self.client.execute_prepared_select(sql, {"1": symbol})
+        if result.get("success"):
+            data = result.get("data", [])
+            return [item.get("time_frame") for item in data if item.get("time_frame")]
+        return []
+    
     def insert_market_data(self, symbol_id: int, market_data: Dict[str, Any]) -> bool:
         """Insert market data."""
         sql = """
-        INSERT INTO market_data (symbol_id, timestamp, open, high, low, close, volume, adjusted_close, time_frame, data_source)
+        INSERT INTO market_data (symbol_id, t_stamp, open, high, low, close, volume, adjusted_close, time_frame, data_source)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        ON CONFLICT (symbol_id, timestamp, time_frame, data_source) DO NOTHING
+        ON CONFLICT (symbol_id, t_stamp, time_frame, data_source) DO NOTHING
         RETURNING *
         """
+        # Convert datetime to ISO format string for JSON serialization
+        # The database API now accepts ISO format strings
+        timestamp = market_data["timestamp"]
+        if isinstance(timestamp, datetime):
+            timestamp = timestamp.isoformat()
+        elif hasattr(timestamp, 'isoformat'):
+            timestamp = timestamp.isoformat()
+        # If it's already a string, keep it as-is (assume it's already in ISO format)
+        
         result = self.client.execute_prepared_insert(sql, {
             "1": symbol_id,
-            "2": market_data["timestamp"],
+            "2": timestamp,
             "3": market_data["open"],
             "4": market_data["high"],
             "5": market_data["low"],

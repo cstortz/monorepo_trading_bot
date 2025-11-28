@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS symbols (
 CREATE TABLE IF NOT EXISTS market_data (
     id BIGSERIAL,
     symbol_id INTEGER NOT NULL REFERENCES symbols(id) ON DELETE CASCADE,
-    timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+    t_stamp TIMESTAMP WITH TIME ZONE NOT NULL,
     open DECIMAL(20,8) NOT NULL,
     high DECIMAL(20,8) NOT NULL,
     low DECIMAL(20,8) NOT NULL,
@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS market_data (
     data_source VARCHAR(50) NOT NULL, -- 'alpha_vantage', 'yahoo', 'binance', etc.
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    PRIMARY KEY (id, timestamp),
-    UNIQUE(symbol_id, timestamp, time_frame, data_source)
-) PARTITION BY RANGE (timestamp);
+    PRIMARY KEY (id, t_stamp),
+    UNIQUE(symbol_id, t_stamp, time_frame, data_source)
+) PARTITION BY RANGE (t_stamp);
 
 -- Real-time prices table - for current market prices
 CREATE TABLE IF NOT EXISTS real_time_prices (
@@ -152,11 +152,11 @@ CREATE TABLE IF NOT EXISTS data_sources (
 -- =============================================
 
 -- Market data indexes
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_symbol_timestamp ON market_data(symbol_id, timestamp DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_symbol_timestamp ON market_data(symbol_id, t_stamp DESC);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_timeframe ON market_data(time_frame);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_timestamp ON market_data(timestamp DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_symbol_timeframe ON market_data(symbol_id, time_frame, timestamp DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_source_timestamp ON market_data(data_source, timestamp DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_timestamp ON market_data(t_stamp DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_symbol_timeframe ON market_data(symbol_id, time_frame, t_stamp DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_market_data_source_timestamp ON market_data(data_source, t_stamp DESC);
 
 -- Real-time prices indexes
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_real_time_prices_symbol ON real_time_prices(symbol_id);
@@ -206,7 +206,7 @@ SELECT
     s.name,
     s.exchange,
     s.asset_type,
-    md.timestamp,
+    md.t_stamp AS timestamp,
     md.open,
     md.high,
     md.low,

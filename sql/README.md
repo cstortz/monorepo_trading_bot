@@ -61,7 +61,7 @@ python setup_database.py --test
 - Time-series data for all symbols
 - Supports multiple timeframes (1m, 5m, 1h, 1d, etc.)
 - Multiple data sources (Alpha Vantage, Yahoo Finance, Binance)
-- **Production**: Partitioned by timestamp for performance
+- **Production**: Partitioned by t_stamp for performance
 
 #### 3. **real_time_prices** - Current Prices
 - Real-time price data
@@ -182,7 +182,7 @@ LIMIT 10;
 ```sql
 SELECT 
     s.symbol,
-    md.timestamp,
+    md.t_stamp AS timestamp,
     md.close,
     ti.sma_20,
     ti.rsi_14,
@@ -190,9 +190,9 @@ SELECT
 FROM symbols s
 JOIN market_data md ON s.id = md.symbol_id
 LEFT JOIN technical_indicators ti ON s.id = ti.symbol_id 
-    AND md.timestamp = ti.timestamp
+    AND md.t_stamp = ti.timestamp
 WHERE s.symbol = 'AAPL'
-ORDER BY md.timestamp DESC;
+ORDER BY md.t_stamp DESC;
 ```
 
 ### Get Market Status

@@ -158,15 +158,21 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="view-symbol">Symbol:</label>
-                            <input type="text" id="view-symbol" placeholder="BTC/USD" />
+                            <select id="view-symbol" style="width: 100%;">
+                                <option value="">Loading symbols...</option>
+                            </select>
+                            <small style="display: block; margin-top: 4px; color: #666; font-size: 0.75rem;">
+                                Select a symbol from the database
+                            </small>
                         </div>
                         <div class="form-group">
                             <label for="view-timeframe">Timeframe:</label>
-                            <select id="view-timeframe">
-                                <option value="1d" selected>1 Day</option>
-                                <option value="1h">1 Hour</option>
-                                <option value="4h">4 Hours</option>
+                            <select id="view-timeframe" disabled>
+                                <option value="">-- Select a symbol first --</option>
                             </select>
+                            <small style="display: block; margin-top: 4px; color: #666; font-size: 0.75rem;">
+                                Timeframes available for selected symbol
+                            </small>
                         </div>
                         <div class="form-group">
                             <label for="view-limit">Limit:</label>

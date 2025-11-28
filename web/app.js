@@ -96,6 +96,8 @@ document.querySelectorAll('.tab-button').forEach(button => {
         // Load tab-specific data
         if (tabName === 'market-data') {
             checkMarketDataStatus();
+            // Reload symbols when market-data tab is shown
+            loadSymbolsForView();
         }
     });
 });
@@ -453,6 +455,18 @@ async function fetchOHLC() {
                 `✅ ${data.message}<br>Records fetched: ${data.records_fetched}, Inserted: ${data.records_inserted}`, 
                 'success'
             );
+            
+            // Refresh symbol and timeframe dropdowns after successful fetch
+            await loadSymbolsForView();
+            
+            // If the fetched symbol is currently selected, refresh its timeframes
+            const viewSymbolSelect = document.getElementById('view-symbol');
+            if (viewSymbolSelect && data.symbol) {
+                const currentSymbol = viewSymbolSelect.value;
+                if (currentSymbol === data.symbol) {
+                    await loadTimeframesForSymbol(data.symbol);
+                }
+            }
         } else {
             showResult(resultEl, `❌ Error: ${data.message || 'Failed to fetch data'}`, 'error');
         }
@@ -513,7 +527,7 @@ async function viewMarketData() {
     const viewBtn = document.getElementById('view-data-btn');
     
     if (!symbol) {
-        tableContainer.innerHTML = '<p class="info-text" style="color: var(--danger-color);">Please enter a symbol</p>';
+        tableContainer.innerHTML = '<p class="info-text" style="color: var(--danger-color);">Please select a symbol from the dropdown</p>';
         return;
     }
     
@@ -575,6 +589,127 @@ async function viewMarketData() {
 }
 
 document.getElementById('view-data-btn').addEventListener('click', viewMarketData);
+
+// Listen for symbol selection changes to load timeframes
+document.addEventListener('DOMContentLoaded', () => {
+    const symbolSelect = document.getElementById('view-symbol');
+    if (symbolSelect) {
+        symbolSelect.addEventListener('change', (e) => {
+            const selectedSymbol = e.target.value.trim();
+            if (selectedSymbol) {
+                loadTimeframesForSymbol(selectedSymbol);
+            } else {
+                // Clear timeframes if no symbol selected
+                const timeframeSelect = document.getElementById('view-timeframe');
+                if (timeframeSelect) {
+                    timeframeSelect.innerHTML = '<option value="">-- Select a symbol first --</option>';
+                    timeframeSelect.disabled = true;
+                }
+            }
+        });
+    }
+});
+
+// Load symbols for View Market Data dropdown
+async function loadSymbolsForView() {
+    const symbolSelect = document.getElementById('view-symbol');
+    if (!symbolSelect) return;
+    
+    try {
+        symbolSelect.innerHTML = '<option value="">Loading symbols...</option>';
+        
+        // Fetch symbols from the database API
+        const url = `${API_BASE.marketData}/symbols?limit=1000&is_active=true`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.symbols && data.symbols.length > 0) {
+            // Clear loading message
+            symbolSelect.innerHTML = '<option value="">-- Select a symbol --</option>';
+            
+            // Sort symbols alphabetically
+            const sortedSymbols = data.symbols.sort((a, b) => {
+                const symbolA = a.symbol || '';
+                const symbolB = b.symbol || '';
+                return symbolA.localeCompare(symbolB);
+            });
+            
+            // Populate dropdown
+            sortedSymbols.forEach(symbol => {
+                const option = document.createElement('option');
+                option.value = symbol.symbol;
+                // Show symbol and name if different
+                const displayText = symbol.name && symbol.name !== symbol.symbol 
+                    ? `${symbol.symbol} (${symbol.name})` 
+                    : symbol.symbol;
+                option.textContent = displayText;
+                symbolSelect.appendChild(option);
+            });
+        } else {
+            symbolSelect.innerHTML = '<option value="">No symbols found in database</option>';
+        }
+    } catch (error) {
+        console.error('Error loading symbols:', error);
+        symbolSelect.innerHTML = '<option value="">Error loading symbols</option>';
+    }
+}
+
+// Load timeframes for selected symbol
+async function loadTimeframesForSymbol(symbol) {
+    const timeframeSelect = document.getElementById('view-timeframe');
+    if (!timeframeSelect || !symbol) {
+        return;
+    }
+    
+    try {
+        timeframeSelect.innerHTML = '<option value="">Loading timeframes...</option>';
+        timeframeSelect.disabled = true;
+        
+        // Fetch timeframes from the database API
+        const url = `${API_BASE.marketData}/market-data/${encodeURIComponent(symbol)}/timeframes`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.timeframes && data.timeframes.length > 0) {
+            // Clear loading message
+            timeframeSelect.innerHTML = '';
+            
+            // Timeframe display mapping
+            const timeframeLabels = {
+                '1m': '1 Minute',
+                '5m': '5 Minutes',
+                '15m': '15 Minutes',
+                '30m': '30 Minutes',
+                '1h': '1 Hour',
+                '4h': '4 Hours',
+                '1d': '1 Day',
+                '1w': '1 Week',
+                '1M': '1 Month'
+            };
+            
+            // Populate dropdown with available timeframes
+            data.timeframes.forEach(timeframe => {
+                const option = document.createElement('option');
+                option.value = timeframe;
+                option.textContent = timeframeLabels[timeframe] || timeframe;
+                timeframeSelect.appendChild(option);
+            });
+            
+            // Select the first timeframe by default
+            if (timeframeSelect.options.length > 0) {
+                timeframeSelect.selectedIndex = 0;
+            }
+        } else {
+            timeframeSelect.innerHTML = '<option value="">No timeframes available</option>';
+        }
+    } catch (error) {
+        console.error('Error loading timeframes:', error);
+        timeframeSelect.innerHTML = '<option value="">Error loading timeframes</option>';
+    } finally {
+        timeframeSelect.disabled = false;
+    }
+}
+
 
 // Sync Symbols
 async function syncSymbols() {
@@ -652,5 +787,6 @@ function showResult(element, message, type) {
 document.addEventListener('DOMContentLoaded', () => {
     updateApiConfigDisplay();
     checkMarketDataStatus();
+    loadSymbolsForView();
 });
 
