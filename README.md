@@ -28,12 +28,26 @@ make dev
 # Or manually:
 docker compose up -d
 
+# Start web interface
+docker compose up -d web
+# Access at http://localhost:5080
+
 # View logs
 docker compose logs -f
 
 # Stop services
 docker compose down
 ```
+
+### Web Interface
+The monorepo includes a modern web dashboard for managing services:
+- **URL**: http://localhost:8080
+- **Features**: 
+  - Market Data management (Kraken integration)
+  - Service status monitoring
+  - Trading pair management
+  - Data visualization
+- **Start**: `docker compose up -d web` or `cd web && python3 server.py`
 
 ### Available Commands
 ```bash
@@ -59,14 +73,28 @@ kubectl get pods
 
 ## Current Status
 
+✅ **Web Dashboard** - Modern web interface
+- **URL**: http://localhost:5080
+- **Features**: Market data management, service monitoring, trading pair management
+- **Status**: Fully functional
+
 ✅ **Hello World Service** - Running and tested
-- **URL**: http://localhost:8003
+- **URL**: http://localhost:5000
 - **Endpoints**: 
   - `GET /` - Hello world message
   - `GET /health` - Health check
   - `GET /info` - Service information
   - `GET /logs/test` - Test logging functionality
 - **Logging**: Development format with file, function, and line numbers
+- **Status**: Fully functional
+
+✅ **Market Data Service** - Kraken integration complete
+- **URL**: http://localhost:5001
+- **Features**: 
+  - Kraken market data collection
+  - OHLC data fetching and storage
+  - Real-time price updates
+  - Trading pair management
 - **Status**: Fully functional
 
 ## Development

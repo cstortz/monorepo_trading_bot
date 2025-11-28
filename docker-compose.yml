@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   hello-world:
     build:
       context: .
       dockerfile: services/hello-world/Dockerfile
     ports:
-      - "8003:8000"
+      - "5000:8000"
     environment:
       - ENVIRONMENT=development
       - LOG_LEVEL=DEBUG
@@ -23,17 +21,66 @@ services:
       retries: 3
       start_period: 40s
 
-  # Future services will be added here
-  # market-data:
-  #   build:
-  #     context: .
-  #     dockerfile: services/market-data/Dockerfile
-  #   ports:
-  #     - "8001:8000"
-  #   environment:
-  #     - ENVIRONMENT=development
-  #   networks:
-  #     - trading-bot-network
+  market-data:
+    build:
+      context: .
+      dockerfile: services/market-data/Dockerfile
+    ports:
+      - "5001:8000"
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - DATABASE_API_URL=${DATABASE_API_URL:-http://dev01.int.stortz.tech:8000}
+    volumes:
+      - ./services/market-data/app:/app/app
+      - ./shared:/app/shared
+      - ./database_client.py:/app/database_client.py
+    networks:
+      - trading-bot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - hello-world
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - trading-bot-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "5080:5080"
+    volumes:
+      - ./web:/app/web
+    networks:
+      - trading-bot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   trading-bot-network:
@@ -41,4 +88,6 @@ networks:
 
 volumes:
   trading-bot-logs:
+    driver: local
+  redis-data:
     driver: local

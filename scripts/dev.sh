@@ -22,13 +22,15 @@ sleep 10
 
 # Check service health
 echo "🏥 Checking service health..."
-curl -f http://localhost:8003/health || echo "❌ Hello World service is not responding"
+curl -f http://localhost:5000/health || echo "❌ Hello World service is not responding"
+curl -f http://localhost:5001/health || echo "❌ Market Data service is not responding"
 
 echo ""
 echo "✅ Development environment is running!"
 echo ""
 echo "Services:"
-echo "  Hello World: http://localhost:8003"
+echo "  Hello World: http://localhost:5000"
+echo "  Market Data: http://localhost:5001"
 echo ""
 echo "Useful commands:"
 echo "  View logs: docker compose logs -f"

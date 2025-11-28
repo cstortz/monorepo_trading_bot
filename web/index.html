@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Monorepo - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        // Configuration can be overridden via window.API_CONFIG before app.js loads
+        window.API_CONFIG = window.API_CONFIG || {};
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Trading Bot Monorepo</h1>
+            <p class="subtitle">Market Data & Trading Services Dashboard</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="market-data">
+                📊 Market Data
+            </button>
+            <button class="tab-button" data-tab="hello-world">
+                👋 Hello World
+            </button>
+            <button class="tab-button" data-tab="strategy-engine">
+                🧠 Strategy Engine
+            </button>
+            <button class="tab-button" data-tab="order-management">
+                📝 Order Management
+            </button>
+            <button class="tab-button" data-tab="portfolio-manager">
+                💼 Portfolio Manager
+            </button>
+            <button class="tab-button" data-tab="risk-management">
+                ⚠️ Risk Management
+            </button>
+        </nav>
+
+        <!-- Market Data Tab -->
+        <div id="market-data" class="tab-content active">
+            <div class="section">
+                <h2>Kraken Market Data</h2>
+                
+                <!-- API Configuration Info -->
+                <div class="section-card" style="background: #f0f9ff; border: 1px solid #0ea5e9;">
+                    <h3 style="font-size: 1rem; margin-bottom: 8px;">🔗 API Configuration</h3>
+                    <div id="api-config-info" class="info-text" style="font-size: 0.875rem;">
+                        <div><strong>Market Data:</strong> <span id="api-market-data-url">Detecting...</span></div>
+                        <div style="margin-top: 4px;"><strong>Hello World:</strong> <span id="api-hello-world-url">Detecting...</span></div>
+                    </div>
+                </div>
+                
+                <!-- Service Status -->
+                <div class="status-card">
+                    <h3>Service Status</h3>
+                    <div id="market-data-status" class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span>Checking...</span>
+                    </div>
+                    <button id="check-status-btn" class="btn btn-primary">Check Status</button>
+                    <div id="status-details" style="margin-top: 12px; padding: 12px; background: var(--bg-color); border-radius: 8px; display: none;">
+                        <div id="status-details-content"></div>
+                    </div>
+                </div>
+
+                <!-- Available Pairs -->
+                <div class="section-card">
+                    <h3>Available Kraken Pairs</h3>
+                    
+                    <!-- Popular Pairs Quick Access -->
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border-radius: 8px; border: 1px solid #0ea5e9;">
+                        <strong style="font-size: 0.875rem; color: #0ea5e9;">🔍 Popular Pairs:</strong>
+                        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('XBT/USD')">XBT/USD</button>
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('ETH/USD')">ETH/USD</button>
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('BTC/USD')">BTC/USD</button>
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('DOGE')">DOGE (XDG/USD)</button>
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('SOL/USD')">SOL/USD</button>
+                            <button class="btn btn-primary" style="padding: 4px 12px; font-size: 0.875rem;" onclick="searchPair('ADA/USD')">ADA/USD</button>
+                        </div>
+                        <p style="margin-top: 8px; margin-bottom: 0; font-size: 0.75rem; color: #666;">
+                            <small>Note: Kraken uses "XBT" for Bitcoin. DOGE/USD is available as "XDG/USD" (search for "DOGE" or "XDG").</small>
+                        </p>
+                    </div>
+                    
+                    <div class="search-box">
+                        <input type="text" id="pair-search" placeholder="Search pairs (e.g., XBT/USD, ETH, DOGE)..." />
+                        <button id="load-pairs-btn" class="btn btn-primary">Load Pairs</button>
+                        <button id="refresh-pairs-btn" class="btn btn-secondary" title="Refresh pairs from Kraken API and update cache">🔄 Refresh Cache</button>
+                    </div>
+                    <div id="pairs-list" class="pairs-container">
+                        <p class="info-text">Click "Load Pairs" to see available trading pairs, or use the popular pairs above to search</p>
+                    </div>
+                </div>
+
+                <!-- Add New Pair -->
+                <div class="section-card">
+                    <h3>Add New Trading Pair</h3>
+                    <div class="form-group">
+                        <label for="kraken-pair-input">Kraken Pair Name:</label>
+                        <input type="text" id="kraken-pair-input" placeholder="e.g., XBTUSD, DOGEUSD" />
+                    </div>
+                    <div class="form-group">
+                        <label for="db-symbol-input">Database Symbol (optional):</label>
+                        <input type="text" id="db-symbol-input" placeholder="e.g., BTC/USD (auto-detected if empty)" />
+                    </div>
+                    <button id="add-pair-btn" class="btn btn-success">Add Pair</button>
+                    <div id="add-pair-result" class="result-message"></div>
+                </div>
+
+                <!-- Fetch OHLC Data -->
+                <div class="section-card">
+                    <h3>Fetch Historical Data (OHLC)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ohlc-pair">Pair:</label>
+                            <input type="text" id="ohlc-pair" placeholder="XBTUSD" />
+                        </div>
+                        <div class="form-group">
+                            <label for="ohlc-timeframe">Timeframe:</label>
+                            <select id="ohlc-timeframe">
+                                <option value="1m">1 Minute</option>
+                                <option value="5m">5 Minutes</option>
+                                <option value="15m">15 Minutes</option>
+                                <option value="30m">30 Minutes</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="4h">4 Hours</option>
+                                <option value="1d" selected>1 Day</option>
+                                <option value="1w">1 Week</option>
+                                <option value="1M">1 Month</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ohlc-limit">Limit:</label>
+                            <input type="number" id="ohlc-limit" value="100" min="1" max="720" />
+                        </div>
+                    </div>
+                    <button id="fetch-ohlc-btn" class="btn btn-primary">Fetch OHLC Data</button>
+                    <div id="ohlc-result" class="result-message"></div>
+                </div>
+
+                <!-- Fetch Ticker Data -->
+                <div class="section-card">
+                    <h3>Fetch Real-Time Price</h3>
+                    <div class="form-group">
+                        <label for="ticker-pair">Pair:</label>
+                        <input type="text" id="ticker-pair" placeholder="XBTUSD" />
+                    </div>
+                    <button id="fetch-ticker-btn" class="btn btn-primary">Fetch Ticker</button>
+                    <div id="ticker-result" class="result-message"></div>
+                </div>
+
+                <!-- View Market Data -->
+                <div class="section-card">
+                    <h3>View Stored Market Data</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="view-symbol">Symbol:</label>
+                            <input type="text" id="view-symbol" placeholder="BTC/USD" />
+                        </div>
+                        <div class="form-group">
+                            <label for="view-timeframe">Timeframe:</label>
+                            <select id="view-timeframe">
+                                <option value="1d" selected>1 Day</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="4h">4 Hours</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="view-limit">Limit:</label>
+                            <input type="number" id="view-limit" value="50" min="1" max="1000" />
+                        </div>
+                    </div>
+                    <button id="view-data-btn" class="btn btn-primary">View Data</button>
+                    <div id="market-data-table" class="data-table-container"></div>
+                </div>
+
+                <!-- Sync Symbols -->
+                <div class="section-card">
+                    <h3>Sync Symbols</h3>
+                    <p class="info-text">Sync all mapped Kraken pairs to the database</p>
+                    <button id="sync-symbols-btn" class="btn btn-warning">Sync All Symbols</button>
+                    <div id="sync-result" class="result-message"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other Tabs (Placeholder) -->
+        <div id="hello-world" class="tab-content">
+            <div class="section">
+                <h2>Hello World Service</h2>
+                <p class="info-text">Service information and endpoints will be displayed here.</p>
+                <button id="hello-world-status-btn" class="btn btn-primary">Check Service Status</button>
+                <div id="hello-world-result" class="result-message"></div>
+            </div>
+        </div>
+
+        <div id="strategy-engine" class="tab-content">
+            <div class="section">
+                <h2>Strategy Engine</h2>
+                <p class="info-text">Coming soon...</p>
+            </div>
+        </div>
+
+        <div id="order-management" class="tab-content">
+            <div class="section">
+                <h2>Order Management</h2>
+                <p class="info-text">Coming soon...</p>
+            </div>
+        </div>
+
+        <div id="portfolio-manager" class="tab-content">
+            <div class="section">
+                <h2>Portfolio Manager</h2>
+                <p class="info-text">Coming soon...</p>
+            </div>
+        </div>
+
+        <div id="risk-management" class="tab-content">
+            <div class="section">
+                <h2>Risk Management</h2>
+                <p class="info-text">Coming soon...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
