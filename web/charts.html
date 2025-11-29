@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Historical Candlestick Chart - Trading Bot</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #0a0e27;
+            --card-bg: #161b33;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --bullish: #26a69a;
+            --bearish: #ef5350;
+            --indicator: #667eea;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+
+        .controls-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #64748b;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 500px;
+        }
+
+        .indicator-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+
+        .info-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+
+        .info-panel h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .info-message {
+            padding: 16px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            text-align: center;
+            font-style: italic;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            padding: 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--bearish);
+            border-radius: 8px;
+            color: var(--bearish);
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-row {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrapper,
+            .indicator-chart-wrapper {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="margin-bottom: 10px;">
+                <a href="index.html" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.9;">
+                    ← Back to Dashboard
+                </a>
+            </div>
+            <h1>📈 Interactive Historical Candlestick Chart</h1>
+            <p class="subtitle">Click on any candle to see historical indicator values up to that point</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls-card">
+            <div class="controls-row">
+                <div class="form-group">
+                    <label for="symbol-select">Symbol:</label>
+                    <select id="symbol-select">
+                        <option value="">Loading symbols...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="timeframe-select">Timeframe:</label>
+                    <select id="timeframe-select" disabled>
+                        <option value="">-- Select symbol first --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="indicator-type">Indicator Type:</label>
+                    <select id="indicator-type">
+                        <option value="RSI">RSI (Relative Strength Index)</option>
+                        <option value="SMA">SMA (Simple Moving Average)</option>
+                        <option value="EMA">EMA (Exponential Moving Average)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="indicator-period">Period:</label>
+                    <select id="indicator-period">
+                        <option value="14">14</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="load-data-btn" class="btn btn-primary">Load Chart Data</button>
+                <button id="reset-btn" class="btn btn-secondary" disabled>Reset to Full Data</button>
+                <button id="refresh-symbols-btn" class="btn btn-secondary" title="Refresh symbols list">🔄 Refresh Symbols</button>
+            </div>
+        </div>
+
+        <!-- Error Message Area -->
+        <div id="error-message" style="display: none;"></div>
+
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Candlestick Chart</h3>
+                <div id="candlestick-chart" class="chart-wrapper"></div>
+            </div>
+            <div class="chart-card">
+                <h3 id="indicator-chart-title">Indicator Chart</h3>
+                <div id="indicator-chart" class="indicator-chart-wrapper"></div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="info-panel">
+            <h3>Selected Candle Information</h3>
+            <div id="info-content">
+                <div class="info-message">
+                    Click on a candle to see historical indicator values up to that point
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL Detection (same logic as main app)
+        function getApiBaseUrls() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const port = window.location.port;
+            const pathname = window.location.pathname;
+            
+            const baseHost = `${protocol}//${hostname}`;
+            const pathParts = pathname.split('/').filter(p => p);
+            const isProxied = pathParts.length > 0 && (pathParts[0] === 'web' || pathParts[0] === 'dashboard');
+            
+            if (isProxied) {
+                const rootPath = pathname.split('/').slice(0, -pathParts.length).join('/') || '';
+                return {
+                    marketData: `${baseHost}${port ? ':' + port : ''}${rootPath}/market-data`,
+                    helloWorld: `${baseHost}${port ? ':' + port : ''}${rootPath}/hello-world`
+                };
+            }
+            
+            const webPort = port ? parseInt(port) : (protocol === 'https:' ? 443 : 80);
+            
+            if (webPort === 5080 || webPort === 80 || webPort === 443 || !port) {
+                return {
+                    marketData: `${baseHost}:5001`,
+                    helloWorld: `${baseHost}:5000`
+                };
+            }
+            
+            if (webPort >= 5000 && webPort <= 5100) {
+                return {
+                    marketData: `${baseHost}:5001`,
+                    helloWorld: `${baseHost}:5000`
+                };
+            }
+            
+            return {
+                marketData: `${baseHost}${port ? ':' + port : ''}/api/market-data`,
+                helloWorld: `${baseHost}${port ? ':' + port : ''}/api/hello-world`
+            };
+        }
+
+        const API_BASE = getApiBaseUrls();
+        console.log('API Base URLs:', API_BASE);
+
+        // Global state
+        let candlestickChart = null;
+        let indicatorChart = null;
+        let candlestickSeries = null;
+        let indicatorSeries = null;
+        let fullData = [];
+        let currentData = [];
+        let selectedIndex = null;
+        let currentIndicator = { type: 'RSI', period: 14 };
+
+        // Wait for script to load, then initialize
+        function waitForLibrary(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkLibrary = () => {
+                attempts++;
+                if (typeof LightweightCharts !== 'undefined' && typeof LightweightCharts.createChart === 'function') {
+                    console.log('LightweightCharts library is ready after', attempts, 'attempts');
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    setTimeout(checkLibrary, 100);
+                } else {
+                    console.error('LightweightCharts library failed to load after', maxAttempts, 'attempts');
+                    showError('Chart library failed to load. Charts will not be available, but you can still load data.');
+                    // Still load symbols even if charts fail
+                    loadSymbols();
+                    setupEventListeners();
+                }
+            };
+            checkLibrary();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded - Initializing charts page');
+            console.log('API_BASE:', API_BASE);
+            console.log('API_BASE.marketData:', API_BASE.marketData);
+            
+            if (!API_BASE || !API_BASE.marketData) {
+                console.error('API_BASE.marketData is not set!', API_BASE);
+                showError('Failed to detect API base URL. Please refresh the page.');
+                return;
+            }
+            
+            // Check if LightweightCharts is already loaded
+            if (typeof LightweightCharts !== 'undefined' && typeof LightweightCharts.createChart === 'function') {
+                console.log('LightweightCharts library already loaded');
+                initializeEverything();
+            } else {
+                console.log('Waiting for LightweightCharts library to load...');
+                waitForLibrary(initializeEverything);
+            }
+        });
+        
+        function initializeEverything() {
+            // Don't initialize charts on page load - wait for user to click "Load Chart Data"
+            // Just load symbols and setup event listeners
+            loadSymbols();
+            setupEventListeners();
+        }
+        
+        // Initialize charts if not already initialized
+        async function ensureChartsInitialized() {
+            // Check if charts are already initialized
+            if (candlestickChart && candlestickSeries && indicatorChart && indicatorSeries) {
+                console.log('Charts already initialized');
+                return true;
+            }
+            
+            // Check if library is loaded
+            if (typeof LightweightCharts === 'undefined' || typeof LightweightCharts.createChart !== 'function') {
+                console.log('Waiting for LightweightCharts library...');
+                // Wait for library to load
+                return new Promise((resolve) => {
+                    waitForLibrary(() => {
+                        try {
+                            initializeCharts();
+                            resolve(true);
+                        } catch (error) {
+                            console.error('Error initializing charts:', error);
+                            showError('Failed to initialize charts: ' + error.message);
+                            resolve(false);
+                        }
+                    });
+                });
+            }
+            
+            // Library is loaded, initialize charts
+            try {
+                initializeCharts();
+                return true;
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+                showError('Failed to initialize charts: ' + error.message);
+                return false;
+            }
+        }
+
+        // Initialize TradingView charts
+        function initializeCharts() {
+            // Check if LightweightCharts is available
+            if (typeof LightweightCharts === 'undefined') {
+                throw new Error('LightweightCharts library is not loaded');
+            }
+            
+            // Candlestick chart
+            const candlestickContainer = document.getElementById('candlestick-chart');
+            if (!candlestickContainer) {
+                throw new Error('Candlestick chart container not found');
+            }
+            
+            console.log('Creating candlestick chart...');
+            console.log('LightweightCharts object:', LightweightCharts);
+            console.log('createChart method:', typeof LightweightCharts.createChart);
+            
+            try {
+                candlestickChart = LightweightCharts.createChart(candlestickContainer, {
+                    layout: {
+                        background: { color: '#0a0e27' },
+                        textColor: '#e2e8f0',
+                    },
+                    grid: {
+                        vertLines: { color: '#334155' },
+                        horzLines: { color: '#334155' },
+                    },
+                    crosshair: {
+                        mode: LightweightCharts.CrosshairMode.Normal,
+                    },
+                    rightPriceScale: {
+                        borderColor: '#334155',
+                    },
+                    timeScale: {
+                        borderColor: '#334155',
+                        timeVisible: true,
+                    },
+                });
+                
+            console.log('Chart created:', candlestickChart);
+            console.log('Chart type:', typeof candlestickChart);
+            console.log('Chart methods:', Object.keys(candlestickChart || {}));
+            
+            // Try to find the addCandlestickSeries method - check all properties
+            const chartKeys = Object.keys(candlestickChart || {});
+            const possibleMethods = chartKeys.filter(key => 
+                key.toLowerCase().includes('candle') || 
+                key.toLowerCase().includes('series') ||
+                key.toLowerCase().includes('add')
+            );
+            console.log('Possible series methods:', possibleMethods);
+            
+            // Also check prototype
+            if (candlestickChart && candlestickChart.constructor) {
+                const protoKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(candlestickChart));
+                console.log('Chart prototype methods:', protoKeys);
+                const protoSeriesMethods = protoKeys.filter(key => 
+                    key.toLowerCase().includes('candle') || 
+                    key.toLowerCase().includes('series') ||
+                    key.toLowerCase().includes('add')
+                );
+                console.log('Prototype series methods:', protoSeriesMethods);
+            }
+            } catch (chartError) {
+                console.error('Error creating chart:', chartError);
+                throw new Error('Failed to create chart: ' + chartError.message);
+            }
+
+            if (!candlestickChart) {
+                throw new Error('Chart creation returned null/undefined');
+            }
+            
+            // Check all available methods to find the right one
+            const allMethods = [];
+            if (candlestickChart) {
+                allMethods.push(...Object.getOwnPropertyNames(candlestickChart));
+                if (Object.getPrototypeOf(candlestickChart)) {
+                    allMethods.push(...Object.getOwnPropertyNames(Object.getPrototypeOf(candlestickChart)));
+                }
+            }
+            console.log('All chart methods/properties:', allMethods);
+            
+            // Try to find the candlestick series method
+            const candlestickMethod = allMethods.find(m => 
+                m.toLowerCase().includes('candle') && 
+                (m.toLowerCase().includes('series') || m.toLowerCase().includes('add'))
+            );
+            console.log('Found candlestick method:', candlestickMethod);
+            
+            if (typeof candlestickChart.addCandlestickSeries !== 'function') {
+                console.error('addCandlestickSeries is not a function');
+                console.error('Trying to call method directly to see error...');
+                // Try calling it anyway to see the actual error
+            }
+            
+            console.log('Adding candlestick series...');
+            console.log('LightweightCharts.CandlestickSeries:', LightweightCharts.CandlestickSeries);
+            console.log('LightweightCharts.SeriesType:', LightweightCharts.SeriesType);
+            try {
+                // Use addSeries method (newer API) instead of addCandlestickSeries
+                if (typeof candlestickChart.addSeries === 'function') {
+                    // Try different API approaches for v5
+                    let seriesCreated = false;
+                    
+                    // Approach 1: Use CandlestickSeries class (v5 API - recommended)
+                    if (LightweightCharts.CandlestickSeries) {
+                        console.log('Using addSeries with LightweightCharts.CandlestickSeries');
+                        try {
+                            candlestickSeries = candlestickChart.addSeries(LightweightCharts.CandlestickSeries, {
+                                upColor: '#26a69a',
+                                downColor: '#ef5350',
+                                borderVisible: false,
+                                wickUpColor: '#26a69a',
+                                wickDownColor: '#ef5350',
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created series using CandlestickSeries class');
+                        } catch (e) {
+                            console.log('CandlestickSeries class approach failed:', e.message);
+                        }
+                    }
+                    
+                    // Approach 2: Check if SeriesType enum exists
+                    if (!seriesCreated && LightweightCharts.SeriesType && LightweightCharts.SeriesType.Candlestick !== undefined) {
+                        console.log('Using addSeries with SeriesType.Candlestick enum');
+                        try {
+                            candlestickSeries = candlestickChart.addSeries(LightweightCharts.SeriesType.Candlestick, {
+                                upColor: '#26a69a',
+                                downColor: '#ef5350',
+                                borderVisible: false,
+                                wickUpColor: '#26a69a',
+                                wickDownColor: '#ef5350',
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created series using SeriesType enum');
+                        } catch (e) {
+                            console.log('Enum approach failed:', e.message);
+                        }
+                    }
+                    
+                    // Approach 3: Try with string type as first parameter
+                    if (!seriesCreated) {
+                        console.log('Trying addSeries with string "Candlestick"');
+                        try {
+                            candlestickSeries = candlestickChart.addSeries('Candlestick', {
+                                upColor: '#26a69a',
+                                downColor: '#ef5350',
+                                borderVisible: false,
+                                wickUpColor: '#26a69a',
+                                wickDownColor: '#ef5350',
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created series using string type');
+                        } catch (e) {
+                            console.log('String approach failed:', e.message);
+                        }
+                    }
+                    
+                    if (!seriesCreated) {
+                        throw new Error('All addSeries approaches failed. Check LightweightCharts version and API.');
+                    }
+                } else if (typeof candlestickChart.addCandlestickSeries === 'function') {
+                    // Fallback to old API if it exists
+                    console.log('Using legacy addCandlestickSeries method');
+                    candlestickSeries = candlestickChart.addCandlestickSeries({
+                        upColor: '#26a69a',
+                        downColor: '#ef5350',
+                        borderVisible: false,
+                        wickUpColor: '#26a69a',
+                        wickDownColor: '#ef5350',
+                    });
+                } else {
+                    throw new Error('Neither addSeries nor addCandlestickSeries found. Available methods: ' + allMethods.join(', '));
+                }
+                
+                console.log('Candlestick series created:', candlestickSeries);
+            } catch (seriesError) {
+                console.error('Error creating candlestick series:', seriesError);
+                console.error('Error stack:', seriesError.stack);
+                throw new Error('Failed to create candlestick series: ' + seriesError.message);
+            }
+            
+            if (!candlestickSeries) {
+                throw new Error('Candlestick series creation returned null/undefined');
+            }
+
+            // Indicator chart
+            const indicatorContainer = document.getElementById('indicator-chart');
+            if (!indicatorContainer) {
+                throw new Error('Indicator chart container not found');
+            }
+            
+            console.log('Creating indicator chart...');
+            indicatorChart = LightweightCharts.createChart(indicatorContainer, {
+                layout: {
+                    background: { color: '#0a0e27' },
+                    textColor: '#e2e8f0',
+                },
+                grid: {
+                    vertLines: { color: '#334155' },
+                    horzLines: { color: '#334155' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: '#334155',
+                },
+                timeScale: {
+                    borderColor: '#334155',
+                    timeVisible: true,
+                },
+            });
+
+            if (!indicatorChart) {
+                throw new Error('Failed to create indicator chart');
+            }
+            
+            console.log('Adding indicator line series...');
+            console.log('LightweightCharts.LineSeries:', LightweightCharts.LineSeries);
+            try {
+                // Use addSeries method (newer API) instead of addLineSeries
+                if (typeof indicatorChart.addSeries === 'function') {
+                    let seriesCreated = false;
+                    
+                    // Approach 1: Use LineSeries class (v5 API)
+                    if (LightweightCharts.LineSeries) {
+                        console.log('Using addSeries with LightweightCharts.LineSeries');
+                        try {
+                            indicatorSeries = indicatorChart.addSeries(LightweightCharts.LineSeries, {
+                                color: '#667eea',
+                                lineWidth: 2,
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created line series using LineSeries class');
+                        } catch (e) {
+                            console.log('LineSeries class approach failed:', e.message);
+                        }
+                    }
+                    
+                    // Approach 2: Check if SeriesType enum exists
+                    if (!seriesCreated && LightweightCharts.SeriesType && LightweightCharts.SeriesType.Line !== undefined) {
+                        console.log('Using addSeries with SeriesType.Line enum');
+                        try {
+                            indicatorSeries = indicatorChart.addSeries(LightweightCharts.SeriesType.Line, {
+                                color: '#667eea',
+                                lineWidth: 2,
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created line series using SeriesType enum');
+                        } catch (e) {
+                            console.log('Enum approach failed:', e.message);
+                        }
+                    }
+                    
+                    // Approach 3: Try with string type
+                    if (!seriesCreated) {
+                        console.log('Trying addSeries with string "Line"');
+                        try {
+                            indicatorSeries = indicatorChart.addSeries('Line', {
+                                color: '#667eea',
+                                lineWidth: 2,
+                            });
+                            seriesCreated = true;
+                            console.log('Successfully created line series using string type');
+                        } catch (e) {
+                            console.log('String approach failed:', e.message);
+                        }
+                    }
+                    
+                    if (!seriesCreated) {
+                        throw new Error('All addSeries approaches failed for line series');
+                    }
+                } else if (typeof indicatorChart.addLineSeries === 'function') {
+                    // Fallback to old API if it exists
+                    console.log('Using legacy addLineSeries method');
+                    indicatorSeries = indicatorChart.addLineSeries({
+                        color: '#667eea',
+                        lineWidth: 2,
+                    });
+                } else {
+                    throw new Error('Neither addSeries nor addLineSeries found on indicator chart');
+                }
+                
+                console.log('Indicator series created:', indicatorSeries);
+            } catch (seriesError) {
+                console.error('Error creating indicator series:', seriesError);
+                throw new Error('Failed to create indicator series: ' + seriesError.message);
+            }
+            
+            if (!indicatorSeries) {
+                throw new Error('Failed to create indicator series');
+            }
+            
+            console.log('Charts initialized successfully');
+
+            // Synchronize time scales (with null checks)
+            candlestickChart.timeScale().subscribeVisibleTimeRangeChange((timeRange) => {
+                if (timeRange && timeRange.from && timeRange.to && indicatorChart) {
+                    try {
+                        indicatorChart.timeScale().setVisibleRange(timeRange);
+                    } catch (e) {
+                        console.warn('Error syncing time range to indicator chart:', e);
+                    }
+                }
+            });
+
+            indicatorChart.timeScale().subscribeVisibleTimeRangeChange((timeRange) => {
+                if (timeRange && timeRange.from && timeRange.to && candlestickChart) {
+                    try {
+                        candlestickChart.timeScale().setVisibleRange(timeRange);
+                    } catch (e) {
+                        console.warn('Error syncing time range to candlestick chart:', e);
+                    }
+                }
+            });
+
+            // Handle clicks on candlestick chart
+            candlestickChart.subscribeClick((param) => {
+                if (param.time) {
+                    handleCandleClick(param.time);
+                }
+            });
+        }
+
+        // Load symbols from API
+        async function loadSymbols() {
+            console.log('loadSymbols() called');
+            const symbolSelect = document.getElementById('symbol-select');
+            if (!symbolSelect) {
+                console.error('Symbol select element not found!');
+                showError('Symbol dropdown element not found on page');
+                return;
+            }
+            
+            console.log('Symbol select element found, setting loading state');
+            symbolSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            // Force a reflow to ensure the change is visible
+            symbolSelect.offsetHeight;
+            
+            try {
+                const url = `${API_BASE.marketData}/symbols?limit=1000&is_active=true`;
+                console.log('Fetching symbols from:', url);
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP error response:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Symbols response:', data);
+                console.log('Symbols count:', data.count);
+                console.log('Symbols array:', data.symbols);
+                
+                // Check if we have symbols
+                if (!data) {
+                    throw new Error('No data in response');
+                }
+                
+                if (!data.symbols) {
+                    console.warn('Response does not have symbols property:', data);
+                    symbolSelect.innerHTML = '<option value="">No symbols property in response</option>';
+                    return;
+                }
+                
+                if (!Array.isArray(data.symbols)) {
+                    console.warn('Symbols is not an array:', typeof data.symbols, data.symbols);
+                    symbolSelect.innerHTML = '<option value="">Invalid symbols format</option>';
+                    return;
+                }
+                
+                if (data.symbols.length === 0) {
+                    console.log('No symbols returned from API');
+                    symbolSelect.innerHTML = '<option value="">No symbols available</option>';
+                    return;
+                }
+                
+                // Sort symbols alphabetically
+                const sortedSymbols = [...data.symbols].sort((a, b) => {
+                    const symbolA = (a.symbol || '').toString();
+                    const symbolB = (b.symbol || '').toString();
+                    return symbolA.localeCompare(symbolB);
+                });
+                
+                console.log('Adding', sortedSymbols.length, 'symbols to dropdown');
+                
+                // Clear dropdown first
+                while (symbolSelect.firstChild) {
+                    symbolSelect.removeChild(symbolSelect.firstChild);
+                }
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = '-- Select Symbol --';
+                symbolSelect.appendChild(defaultOption);
+                
+                // Add all symbols
+                sortedSymbols.forEach((symbol, index) => {
+                    try {
+                        const option = document.createElement('option');
+                        const symbolValue = symbol.symbol || symbol.name || '';
+                        const symbolName = symbol.name || symbol.symbol || '';
+                        
+                        if (!symbolValue) {
+                            console.warn('Skipping symbol with no value:', symbol);
+                            return;
+                        }
+                        
+                        option.value = symbolValue;
+                        // Show symbol and name if different
+                        const displayText = symbolName && symbolName !== symbolValue 
+                            ? `${symbolValue} (${symbolName})` 
+                            : symbolValue;
+                        option.textContent = displayText;
+                        symbolSelect.appendChild(option);
+                    } catch (err) {
+                        console.error('Error adding symbol option:', err, symbol);
+                    }
+                });
+                
+                // Force update
+                symbolSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                console.log('Successfully loaded', symbolSelect.options.length - 1, 'symbols');
+                console.log('Dropdown now has', symbolSelect.options.length, 'total options');
+                
+            } catch (error) {
+                console.error('Error loading symbols:', error);
+                if (symbolSelect) {
+                    symbolSelect.innerHTML = '<option value="">Error loading symbols</option>';
+                }
+                showError('Failed to load symbols: ' + error.message);
+            }
+        }
+
+        // Load timeframes for selected symbol
+        async function loadTimeframes() {
+            const symbolSelect = document.getElementById('symbol-select');
+            const timeframeSelect = document.getElementById('timeframe-select');
+            const symbol = symbolSelect.value;
+            
+            if (!symbol) {
+                timeframeSelect.innerHTML = '<option value="">-- Select symbol first --</option>';
+                timeframeSelect.disabled = true;
+                return;
+            }
+            
+            timeframeSelect.innerHTML = '<option value="">Loading...</option>';
+            timeframeSelect.disabled = true;
+            
+            try {
+                const url = `${API_BASE.marketData}/market-data/${encodeURIComponent(symbol)}/timeframes`;
+                console.log('Fetching timeframes from:', url);
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Timeframes response:', data);
+                
+                if (data.timeframes && data.timeframes.length > 0) {
+                    timeframeSelect.innerHTML = '<option value="">-- Select Timeframe --</option>';
+                    data.timeframes.forEach(tf => {
+                        const option = document.createElement('option');
+                        option.value = tf;
+                        option.textContent = tf;
+                        timeframeSelect.appendChild(option);
+                    });
+                    timeframeSelect.disabled = false;
+                } else {
+                    timeframeSelect.innerHTML = '<option value="">No timeframes available</option>';
+                }
+            } catch (error) {
+                console.error('Error loading timeframes:', error);
+                timeframeSelect.innerHTML = '<option value="">Error loading timeframes</option>';
+                showError('Failed to load timeframes: ' + error.message);
+            }
+        }
+
+        // Load chart data
+        async function loadChartData() {
+            const symbol = document.getElementById('symbol-select').value;
+            const timeframe = document.getElementById('timeframe-select').value;
+            const loadBtn = document.getElementById('load-data-btn');
+            
+            if (!symbol || !timeframe) {
+                showError('Please select both symbol and timeframe');
+                return;
+            }
+            
+            loadBtn.disabled = true;
+            loadBtn.innerHTML = '<span class="loading"></span> Loading...';
+            hideError();
+            
+            try {
+                // First, ensure charts are initialized
+                console.log('Ensuring charts are initialized...');
+                const chartsReady = await ensureChartsInitialized();
+                
+                if (!chartsReady) {
+                    showError('Failed to initialize charts. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Now fetch the data
+                const url = `${API_BASE.marketData}/market-data/${encodeURIComponent(symbol)}?timeframe=${timeframe}&limit=1000`;
+                console.log('Fetching chart data from:', url);
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Chart data response:', data);
+                
+                if (data.data && data.data.length > 0) {
+                    // Convert API data to chart format with validation
+                    fullData = data.data
+                        .map(item => {
+                            // Validate timestamp
+                            if (!item.timestamp) {
+                                console.warn('Skipping item with missing timestamp:', item);
+                                return null;
+                            }
+                            
+                            const timestamp = new Date(item.timestamp);
+                            if (isNaN(timestamp.getTime())) {
+                                console.warn('Skipping item with invalid timestamp:', item.timestamp);
+                                return null;
+                            }
+                            
+                            const timeValue = Math.floor(timestamp.getTime() / 1000);
+                            
+                            // Validate OHLC values
+                            const open = parseFloat(item.open);
+                            const high = parseFloat(item.high);
+                            const low = parseFloat(item.low);
+                            const close = parseFloat(item.close);
+                            
+                            if (isNaN(open) || isNaN(high) || isNaN(low) || isNaN(close)) {
+                                console.warn('Skipping item with invalid OHLC values:', item);
+                                return null;
+                            }
+                            
+                            // Validate price values are positive
+                            if (open <= 0 || high <= 0 || low <= 0 || close <= 0) {
+                                console.warn('Skipping item with non-positive prices:', item);
+                                return null;
+                            }
+                            
+                            // Validate high >= low and high/low are within reasonable bounds
+                            if (high < low) {
+                                console.warn('Skipping item with high < low:', item);
+                                return null;
+                            }
+                            
+                            return {
+                                time: timeValue,
+                                open: open,
+                                high: high,
+                                low: low,
+                                close: close,
+                                volume: parseInt(item.volume) || 0,
+                            };
+                        })
+                        .filter(item => item !== null) // Remove invalid entries
+                        .sort((a, b) => a.time - b.time);
+                    
+                    console.log('Valid data points:', fullData.length, 'out of', data.data.length);
+                    
+                    if (fullData.length === 0) {
+                        throw new Error('No valid data points after filtering');
+                    }
+                    
+                    currentData = [...fullData];
+                    selectedIndex = null;
+                    
+                    // Update charts
+                    console.log('Updating charts with', fullData.length, 'data points');
+                    updateCharts();
+                    document.getElementById('reset-btn').disabled = true;
+                } else {
+                    showError('No data available for the selected symbol and timeframe');
+                }
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+                showError('Failed to load chart data: ' + error.message);
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Chart Data';
+            }
+        }
+
+        // Update charts with current data
+        function updateCharts() {
+            if (currentData.length === 0) {
+                console.warn('No data to display');
+                return;
+            }
+            
+            // Check if charts are initialized
+            if (!candlestickSeries || !candlestickChart) {
+                console.warn('Charts not initialized, skipping chart update');
+                return;
+            }
+            
+            // Validate data before setting
+            const validData = currentData.filter(item => {
+                if (!item || typeof item.time !== 'number' || isNaN(item.time)) {
+                    console.warn('Invalid time value:', item);
+                    return false;
+                }
+                if (typeof item.open !== 'number' || typeof item.high !== 'number' || 
+                    typeof item.low !== 'number' || typeof item.close !== 'number') {
+                    console.warn('Invalid OHLC values:', item);
+                    return false;
+                }
+                if (isNaN(item.open) || isNaN(item.high) || isNaN(item.low) || isNaN(item.close)) {
+                    console.warn('NaN in OHLC values:', item);
+                    return false;
+                }
+                return true;
+            });
+            
+            if (validData.length === 0) {
+                console.error('No valid data points after validation');
+                showError('No valid data points to display');
+                return;
+            }
+            
+            console.log('Setting', validData.length, 'valid data points to chart');
+            
+            try {
+                // Update candlestick chart
+                candlestickSeries.setData(validData);
+                
+                // Fit content after a small delay to ensure data is set
+                setTimeout(() => {
+                    try {
+                        candlestickChart.timeScale().fitContent();
+                    } catch (e) {
+                        console.warn('Error fitting content:', e);
+                    }
+                }, 100);
+                
+                // Calculate and update indicator
+                updateIndicator();
+            } catch (error) {
+                console.error('Error updating charts:', error);
+                console.error('Data sample:', validData.slice(0, 3));
+                showError('Failed to update charts: ' + error.message);
+            }
+        }
+
+        // Update indicator chart
+        function updateIndicator() {
+            if (currentData.length === 0) return;
+            
+            // Check if charts are initialized
+            if (!indicatorSeries || !indicatorChart) {
+                console.warn('Indicator chart not initialized, skipping indicator update');
+                return;
+            }
+            
+            const indicatorType = document.getElementById('indicator-type').value;
+            const period = parseInt(document.getElementById('indicator-period').value);
+            
+            currentIndicator = { type: indicatorType, period: period };
+            
+            let indicatorData = [];
+            
+            if (selectedIndex !== null) {
+                // Calculate indicator up to selected index
+                indicatorData = calculateIndicator(currentData, indicatorType, period, selectedIndex);
+            } else {
+                // Calculate indicator for all data
+                indicatorData = calculateIndicator(currentData, indicatorType, period);
+            }
+            
+            try {
+                // Update indicator series
+                indicatorSeries.setData(indicatorData);
+                indicatorChart.timeScale().fitContent();
+            } catch (error) {
+                console.error('Error updating indicator:', error);
+            }
+            
+            // Update indicator chart title
+            const title = document.getElementById('indicator-chart-title');
+            title.textContent = `${indicatorType}(${period}) Chart`;
+        }
+
+        // Calculate indicator (with upToIndex support)
+        function calculateIndicator(data, type, period, upToIndex = null) {
+            const dataSlice = upToIndex !== null ? data.slice(0, upToIndex + 1) : data;
+            
+            if (dataSlice.length < period) {
+                return []; // Not enough data
+            }
+            
+            let values = [];
+            
+            switch (type) {
+                case 'RSI':
+                    values = calculateRSI(dataSlice, period);
+                    break;
+                case 'SMA':
+                    values = calculateSMA(dataSlice, period);
+                    break;
+                case 'EMA':
+                    values = calculateEMA(dataSlice, period);
+                    break;
+            }
+            
+            // Map to chart format
+            return values.map((value, index) => ({
+                time: dataSlice[index + period - 1].time,
+                value: value,
+            }));
+        }
+
+        // Calculate RSI
+        function calculateRSI(data, period) {
+            if (data.length < period + 1) return [];
+            
+            const gains = [];
+            const losses = [];
+            
+            // Calculate price changes
+            for (let i = 1; i < data.length; i++) {
+                const change = data[i].close - data[i - 1].close;
+                gains.push(change > 0 ? change : 0);
+                losses.push(change < 0 ? -change : 0);
+            }
+            
+            // Calculate initial average gain and loss
+            let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            
+            const rsiValues = [];
+            
+            // Calculate first RSI
+            if (avgLoss === 0) {
+                rsiValues.push(100);
+            } else {
+                const rs = avgGain / avgLoss;
+                rsiValues.push(100 - (100 / (1 + rs)));
+            }
+            
+            // Calculate subsequent RSI values using Wilder's smoothing
+            for (let i = period; i < gains.length; i++) {
+                avgGain = (avgGain * (period - 1) + gains[i]) / period;
+                avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+                
+                if (avgLoss === 0) {
+                    rsiValues.push(100);
+                } else {
+                    const rs = avgGain / avgLoss;
+                    rsiValues.push(100 - (100 / (1 + rs)));
+                }
+            }
+            
+            return rsiValues;
+        }
+
+        // Calculate SMA
+        function calculateSMA(data, period) {
+            if (data.length < period) return [];
+            
+            const smaValues = [];
+            
+            for (let i = period - 1; i < data.length; i++) {
+                const sum = data.slice(i - period + 1, i + 1).reduce((acc, item) => acc + item.close, 0);
+                smaValues.push(sum / period);
+            }
+            
+            return smaValues;
+        }
+
+        // Calculate EMA
+        function calculateEMA(data, period) {
+            if (data.length < period) return [];
+            
+            const multiplier = 2 / (period + 1);
+            const emaValues = [];
+            
+            // Calculate initial SMA
+            let sum = data.slice(0, period).reduce((acc, item) => acc + item.close, 0);
+            let ema = sum / period;
+            emaValues.push(ema);
+            
+            // Calculate subsequent EMA values
+            for (let i = period; i < data.length; i++) {
+                ema = (data[i].close - ema) * multiplier + ema;
+                emaValues.push(ema);
+            }
+            
+            return emaValues;
+        }
+
+        // Handle candle click
+        function handleCandleClick(clickedTime) {
+            if (fullData.length === 0) return;
+            
+            // Find the index of the clicked candle
+            const index = fullData.findIndex(candle => candle.time === clickedTime);
+            
+            if (index === -1) return;
+            
+            // Check if we have enough data before this point for the indicator
+            const period = parseInt(document.getElementById('indicator-period').value);
+            if (index < period - 1) {
+                showError(`Not enough data before this point. Need at least ${period} candles for the selected period.`);
+                return;
+            }
+            
+            selectedIndex = index;
+            currentData = fullData.slice(0, index + 1);
+            
+            // Update charts
+            updateCharts();
+            
+            // Update info panel
+            updateInfoPanel(index);
+            
+            // Enable reset button
+            document.getElementById('reset-btn').disabled = false;
+        }
+
+        // Update information panel
+        function updateInfoPanel(index) {
+            const candle = fullData[index];
+            const indicatorType = document.getElementById('indicator-type').value;
+            const period = parseInt(document.getElementById('indicator-period').value);
+            
+            // Calculate indicator value at this point
+            const indicatorData = calculateIndicator(fullData, indicatorType, period, index);
+            const indicatorValue = indicatorData.length > 0 ? indicatorData[indicatorData.length - 1].value : null;
+            
+            const date = new Date(candle.time * 1000);
+            const dateStr = date.toLocaleString();
+            
+            const infoHTML = `
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Date</div>
+                        <div class="info-value">${dateStr}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Open</div>
+                        <div class="info-value">${candle.open.toFixed(4)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">High</div>
+                        <div class="info-value">${candle.high.toFixed(4)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Low</div>
+                        <div class="info-value">${candle.low.toFixed(4)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Close</div>
+                        <div class="info-value">${candle.close.toFixed(4)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">${indicatorType}(${period}) at this point</div>
+                        <div class="info-value">${indicatorValue !== null ? indicatorValue.toFixed(4) : 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Candles Analyzed</div>
+                        <div class="info-value">${index + 1} / ${fullData.length}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('info-content').innerHTML = infoHTML;
+        }
+
+        // Reset to full data
+        function resetToFullData() {
+            selectedIndex = null;
+            currentData = [...fullData];
+            updateCharts();
+            document.getElementById('reset-btn').disabled = true;
+            
+            // Reset info panel
+            document.getElementById('info-content').innerHTML = `
+                <div class="info-message">
+                    Click on a candle to see historical indicator values up to that point
+                </div>
+            `;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            const symbolSelect = document.getElementById('symbol-select');
+            if (symbolSelect) {
+                symbolSelect.addEventListener('change', loadTimeframes);
+            }
+            
+            const loadBtn = document.getElementById('load-data-btn');
+            if (loadBtn) {
+                loadBtn.addEventListener('click', loadChartData);
+            }
+            
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', resetToFullData);
+            }
+            
+            const refreshSymbolsBtn = document.getElementById('refresh-symbols-btn');
+            if (refreshSymbolsBtn) {
+                refreshSymbolsBtn.addEventListener('click', () => {
+                    console.log('Manual refresh of symbols triggered');
+                    loadSymbols();
+                });
+            }
+            
+            const indicatorType = document.getElementById('indicator-type');
+            if (indicatorType) {
+                indicatorType.addEventListener('change', () => {
+                    if (currentData.length > 0) {
+                        updateIndicator();
+                        if (selectedIndex !== null) {
+                            updateInfoPanel(selectedIndex);
+                        }
+                    }
+                });
+            }
+            
+            const indicatorPeriod = document.getElementById('indicator-period');
+            if (indicatorPeriod) {
+                indicatorPeriod.addEventListener('change', () => {
+                    if (currentData.length > 0) {
+                        updateIndicator();
+                        if (selectedIndex !== null) {
+                            updateInfoPanel(selectedIndex);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.className = 'error-message';
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
